@@ -1,33 +1,36 @@
+from transformers import PromptDepthAnythingConfig
 import torch
 from transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
+import sys
+import time
+from transformers import TextStreamer
+from transformers import pipeline
 
+model = "Qwen/Qwen3-0.6B"
+# model = "google/gemma-3n-E2B-it"
+#model = "ServiceNow-AI/Apriel-1.5-15b-Thinker"
 
-model = "google/gemma-3n-E4B-it"
+device = "cuda:0"
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
 
-
-tokenizer = AutoTokenizer.from_pretrained(model)
-model = AutoModelForCausalLM.from_pretrained(model, device_map='auto')
-
-if __name__ == "__main__":
-    import sys
-    import time
-    from transformers import TextStreamer
-
-    prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else input("Enter prompt: ")
-    
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    
-    streamer = TextStreamer(tokenizer, skip_prompt=True)
-    
-    print(f"\nGenerating response for: '{prompt}'\n")
-    
-    start_time = time.time()
-    outputs = model.generate(**inputs, max_new_tokens=200, streamer=streamer)
-    end_time = time.time()
-    
-    num_tokens = len(outputs[0]) - len(inputs["input_ids"][0])
-    time_taken = end_time - start_time
-    tokens_per_second = num_tokens / time_taken
-    
-    print(f"\n\nStats:\nTokens generated: {num_tokens}\nTime taken: {time_taken:.2f}s\nTokens per second: {tokens_per_second:.2f}")
+file = open("./texts/1984_1.txt")
+pipe= pipeline("text-generation", model=model,device=device)
+input = file.read()
+streamer = TextStreamer(pipe.tokenizer, skip_prompt=True)
+for i in range(1,100):
+    summarize = [
+        {'role':'system', 'content':'Rewrite this passage in your own words and in a similar length and style.'},
+        {'role':'user', 'content':input}
+    ]
+    output = pipe(
+        summarize,
+        max_new_tokens=2000,
+        return_full_text=False,
+        do_sample=True,
+        temperature=0.7,
+        tokenizer_encode_kwargs={"enable_thinking": False},
+    )
+    print(f'Iteration number {i}\n {output}')
+    input = output[0]["generated_text"]
