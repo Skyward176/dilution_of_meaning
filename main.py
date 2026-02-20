@@ -5,8 +5,6 @@ from transformers import AutoTokenizer
 import sys
 import time
 from transformers import TextStreamer
-<<<<<<< HEAD
-=======
 from transformers import pipeline
 
 model = "Qwen/Qwen3-0.6B"
