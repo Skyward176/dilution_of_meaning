@@ -4,3 +4,4 @@ venv
 .venv
 iteration_outputs/*
 trimmed_outputs/*
+*.png
