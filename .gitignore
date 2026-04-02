@@ -5,3 +5,9 @@ venv
 iteration_outputs/*
 trimmed_outputs/*
 *.png
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
