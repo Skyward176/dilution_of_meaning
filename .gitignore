@@ -11,3 +11,6 @@ trimmed_outputs/*
 *.log
 *.out
 *.synctex.gz
+scripts/input_texts
+scripts/output_paragraphs
+.DS_Store
