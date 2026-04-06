@@ -1,10 +1,11 @@
 import torch
-import matplotlib
+import matplotlib.pyplot as plt
 # from mlx_vlm import load, generate
 from mlx_lm import load, generate
 from mlx_lm import sample_utils
 from pathlib import Path
-from bert_score import score
+from bert_score import BERTScorer
+import numpy as np
 
 
 
@@ -56,6 +57,8 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         device = torch.device("cuda")
 
+    scorer = BERTScorer(lang="en", device=device)
+
     # gen_model_id = "mlx-community/gemma-4-e4b-it-8bit"
 
     gen_model_id = "mlx-community/Qwen3-0.6B-bf16"
@@ -71,16 +74,25 @@ if __name__ == "__main__":
 
     output = []
     print("Commencing summarization loop: ")
+    all_scores = []
     for text in texts:
+        text_scores = []
+        original = text
         for i in range(ITERATIONS):
             text = summarize_subroutine(text, gen_tokenizer, gen)
+            precision, recall, F1 = scorer.score(refs=[original], cands=[text])
+            text_scores.append(F1)
         output.append(text)
+        all_scores.append(text_scores)
 
-    print(output)
-    candidates = texts
-    references = output
+    # Plot F1 score for each text over iterations
+    plt.figure()
+    plt.title('Iteration vs BERTScore F1 Score')
+    plt.xlabel('Iterations')
+    plt.ylabel('BERTScore')
 
-    # lang="en" automatically picks the best model (usually RoBERTa-large)
-    P, R, F1 = score(candidates, references, lang="en", verbose=True)
-
-    print(f"F1 Score: {F1.mean():.4f}")
+    for text, scores in enumerate(all_scores):
+        print(np.shape(scores))
+        plt.plot(range(ITERATIONS), scores, label=f'Text {text}')
+    plt.legend()
+    plt.show()
